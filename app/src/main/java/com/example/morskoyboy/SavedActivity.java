@@ -2,6 +2,7 @@ package com.example.morskoyboy;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -25,6 +26,14 @@ public class SavedActivity extends AppCompatActivity {
     private boolean isPlayerTurn;
     private List<Shot> shots;
     private List<RectF> shapes;
+    private static final String PREFS_NAME = "ShotPrefs";
+    private static final String PREF_SHOT_COUNT = "ShotCount";
+    private static final String PREF_SHOT_PREFIX = "Shot_";
+    private static final String PREF_SHAPES_COUNT = "ShapesCount";
+    private static final String PREF_SHAPE_PREFIX = "Shape_";
+    private SharedPreferences sharedPreferences;
+    private SharedPreferences.Editor editor;
+    private int shotCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,12 +75,30 @@ public class SavedActivity extends AppCompatActivity {
 
         setContentView(layout);
 
+        sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+        shotCount = sharedPreferences.getInt(PREF_SHOT_COUNT, 0);
+
         isPlayerTurn = true;
         shots = new ArrayList<>();
+        for (int i = 0; i < shotCount; i++) {
+            int x = sharedPreferences.getInt(PREF_SHOT_PREFIX + i + "_x", 0);
+            int y = sharedPreferences.getInt(PREF_SHOT_PREFIX + i + "_y", 0);
+            Shot shot = new Shot(x, y);
+            shots.add(shot);
+        }
 
+        shapes = loadShapesFromSharedPreferences();
         if (shapes == null) {
             shapes = generateRandomShapes();
+            saveShapesToSharedPreferences(shapes);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        editor.clear().apply();
     }
 
     private List<RectF> generateRandomShapes() {
@@ -86,6 +113,31 @@ public class SavedActivity extends AppCompatActivity {
             shapes.add(new RectF(left, top, right, bottom));
         }
 
+        return shapes;
+    }
+
+    private void saveShapesToSharedPreferences(List<RectF> shapes) {
+        editor.putInt(PREF_SHAPES_COUNT, shapes.size());
+        for (int i = 0; i < shapes.size(); i++) {
+            RectF shape = shapes.get(i);
+            editor.putFloat(PREF_SHAPE_PREFIX + i + "_left", shape.left);
+            editor.putFloat(PREF_SHAPE_PREFIX + i + "_top", shape.top);
+            editor.putFloat(PREF_SHAPE_PREFIX + i + "_right", shape.right);
+            editor.putFloat(PREF_SHAPE_PREFIX + i + "_bottom", shape.bottom);
+        }
+        editor.apply();
+    }
+
+    private List<RectF> loadShapesFromSharedPreferences() {
+        List<RectF> shapes = new ArrayList<>();
+        int shapesCount = sharedPreferences.getInt(PREF_SHAPES_COUNT, 0);
+        for (int i = 0; i < shapesCount; i++) {
+            float left = sharedPreferences.getFloat(PREF_SHAPE_PREFIX + i + "_left", 0);
+            float top = sharedPreferences.getFloat(PREF_SHAPE_PREFIX + i + "_top", 0);
+            float right = sharedPreferences.getFloat(PREF_SHAPE_PREFIX + i + "_right", 0);
+            float bottom = sharedPreferences.getFloat(PREF_SHAPE_PREFIX + i + "_bottom", 0);
+            shapes.add(new RectF(left, top, right, bottom));
+        }
         return shapes;
     }
 
@@ -170,20 +222,13 @@ public class SavedActivity extends AppCompatActivity {
         }
 
         public void fireShot(int x, int y) {
-            Shot shot = new Shot(x, y);
-            shots.add(shot);
+            shots.add(new Shot(x, y));
             invalidate();
-
-            if (isHit(shot)) {
-                // Handle hit logic here
-            } else {
-                // Handle miss logic here
-            }
         }
 
         private boolean isHit(Shot shot) {
             for (RectF shape : shapes) {
-                if (RectF.intersects(shape, shot.getRect())) {
+                if (shape.contains(shot.getX() * cellSize, shot.getY() * cellSize)) {
                     return true;
                 }
             }
@@ -207,25 +252,5 @@ public class SavedActivity extends AppCompatActivity {
         public int getY() {
             return y;
         }
-
-        public RectF getRect() {
-            float left = x * savedGridView.getCellSize();
-            float top = y * savedGridView.getCellSize();
-            float right = left + savedGridView.getCellSize();
-            float bottom = top + savedGridView.getCellSize();
-            return new RectF(left, top, right, bottom);
-        }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
