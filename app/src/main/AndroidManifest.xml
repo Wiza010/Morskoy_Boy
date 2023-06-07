@@ -118,13 +118,6 @@
                 android:value="" />
         </activity>
         <activity
-            android:name=".BattleShip2"
-            android:exported="false">
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>
-        <activity
             android:name=".SeaBattleMain"
             android:exported="false">
             <meta-data
