@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
 
         private static final int GRID_SIZE = 10;
         private static final int CELL_SIZE = 80;
-        private static final int SHAPE_DISTANCE = 1; // Minimum distance between shapes (in cells)
+        private static final int SHAPE_DISTANCE = 1;
 
         private Paint gridPaint;
         private Paint squarePaint;
